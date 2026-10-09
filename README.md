@@ -76,7 +76,7 @@ bash ~/.claude/plugins/cache/claude-config-sync/config-sync/*/scripts/config-syn
 
 If one of your repos is a plugin marketplace that claude.ai or Claude Code installs from, there is no live file to copy; the apps pull from GitHub. Two things to know:
 
-- **claude.ai does not sync on a plain push.** It syncs within a minute or two when a pull request is merged into the default branch (verified on a personal account, 2026-10-09), or when you ask: Settings > Plugins > Add > Manage marketplaces > your marketplace's menu > Check for updates. So for a skills repo, push a branch and merge a PR instead of pushing to `main`; the skill does that when the repo is listed as `pr = <repo>` in the conf.
+- **claude.ai does not sync on a plain push.** It syncs within a minute or two when a pull request is merged into the default branch (verified on a personal account, 2026-10-09), or when you ask: Settings > Plugins > Add > Manage marketplaces > your marketplace's menu > Check for updates. So for a skills repo, push a branch and merge a PR instead of pushing to `main`; the skill does that for any repo listed on a `pr = <repo>` line in the conf.
 - **Claude Code refreshes installed plugins when it starts**, so a new session picks up what claude.ai has synced. The desktop app may need a restart rather than just a new session.
 
 ### If you only use claude.ai or Cowork
@@ -90,6 +90,7 @@ Add the marketplace under Settings > Plugins > Add > Add marketplace, `au5m/clau
 - **`$'\r': command not found`** when the hook runs. The script got CRLF line endings, usually from `core.autocrlf=true` on Windows. This repo's `.gitattributes` forces LF for `*.sh`; if you copied the script somewhere else, run `dos2unix` on it or re-clone.
 - **"behind origin" never shows up.** The hooks don't fetch (no network at session start). Only `--report`, which the skill runs, does.
 - **gitleaks exit code looks wrong.** Don't pipe its output (`| tail`, `| head`); the exit code you get is the pipe's. The skill is told this; if you run it by hand, run it bare.
+- **I pushed a new version of this plugin and nothing changed.** Claude Code pins an installed plugin to the commit it was installed from and does not pull new ones on its own; the desktop app's Update button stays grey too. Fix: open the plugin screen, uninstall config-sync from the ⋮ menu, and install it again from the `claude-config-sync` marketplace, then start a new session. If the marketplace itself is stale, refresh its clone first: `git -C ~/.claude/plugins/marketplaces/claude-config-sync pull --ff-only` (or `/plugin marketplace update claude-config-sync` in the terminal). Your conf and repos are untouched by a reinstall.
 - **Commit message starts with a stray character on Windows.** `Set-Content -Encoding UTF8` in PowerShell 5.1 writes a BOM. Use `[IO.File]::WriteAllText` with `UTF8Encoding $false`, or `git commit -m`.
 
 ## Development
