@@ -4,6 +4,7 @@
 # Reads ~/.claude/config-sync.conf (see examples/config-sync.conf) and checks:
 #   - each listed repo for uncommitted, unpushed and (in --report) behind-origin work
 #   - each live-file mapping for drift between the repo copy and the live copy
+#   - which repos are marked 'pr = <repo>' (published through a pull request)
 #
 # Modes:
 #   (no args)   SessionEnd hook: silent when clean; on drift prints one line to
@@ -43,7 +44,7 @@ expand() {  # ~ and $HOME at the start of a path
 trim() { local s="$1"; s="${s#"${s%%[![:space:]]*}"}"; s="${s%"${s##*[![:space:]]}"}"; printf '%s' "$s"; }
 
 # ---- parse config
-base=""; REPOS=(); LIVE=(); LIVEDIR=()
+base=""; REPOS=(); LIVE=(); LIVEDIR=(); PR=()
 if [ -f "$CONF" ]; then
   while IFS= read -r line || [ -n "$line" ]; do
     line="${line%%#*}"; line="$(trim "$line")"; [ -z "$line" ] && continue
@@ -53,6 +54,7 @@ if [ -f "$CONF" ]; then
       repo)    REPOS+=("$val") ;;
       live)    LIVE+=("$val") ;;
       livedir) LIVEDIR+=("$val") ;;
+      pr)      PR+=("$val") ;;
     esac
   done < "$CONF"
 fi
@@ -94,7 +96,8 @@ for rr in "${REPOS[@]}"; do
   behind=$(git -C "$r" rev-list --count HEAD..@{u} 2>/dev/null || echo "?")
   if [ "$dirty" != "0" ] || [ "$ahead" != "0" ] || [ "$behind" != "0" ]; then problems=1; fi
   if [ "$mode" = "report" ]; then
-    say "== $name  ($(git -C "$r" status -sb 2>/dev/null | head -1))"
+    viapr=""; for q in "${PR[@]-}"; do [ -n "$q" ] && [ "$(basename "$(resolve "$q")")" = "$name" ] && viapr="  [publish via PR]"; done
+    say "== $name  ($(git -C "$r" status -sb 2>/dev/null | head -1))$viapr"
     say "   uncommitted: $dirty   unpushed: $ahead   behind origin: $behind"
     [ "$dirty" != "0" ] && say "$(git -C "$r" status --porcelain | sed 's/^/   /')"
   elif [ "$dirty" != "0" ] || [ "$ahead" != "0" ] || [ "$behind" != "0" ]; then

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Smoke test for scripts/config-sync-check.sh against throwaway repos.
-# Run: bash tests/smoke.sh   (needs git; writes only under a temp dir)
+# Run: bash tests/smoke.sh   (needs git; writes only under a temp dir; 13 checks)
 set -eu
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
 S="$HERE/scripts/config-sync-check.sh"
@@ -23,6 +23,7 @@ repo = skills
 repo = dotfiles
 live = dotfiles/claude/CLAUDE.md -> ~/.claude/CLAUDE.md
 livedir = dotfiles/claude/agents -> ~/.claude/agents
+pr = skills
 EOF
 
 fail=0
@@ -32,6 +33,7 @@ check() { if [ "$1" = "$2" ]; then echo "ok   $3"; else echo "FAIL $3: expected 
 check "$(bash "$S"; echo "x$?")" "x0" "hook silent + exit 0 when clean"
 check "$(bash "$S" --start; echo "x$?")" "x0" "start silent + exit 0 when clean"
 check "$(bash "$S" --report | tail -1)" "config-sync: clean" "report says clean"
+case "$(bash "$S" --report)" in *"== skills"*"[publish via PR]"*) echo "ok   report marks pr repo";; *) echo "FAIL pr mark"; fail=1;; esac
 
 # 2. dirty everywhere
 sleep 1; echo b > "$HOME/.claude/CLAUDE.md"; echo x > "$T/base/skills/new.md"

@@ -31,6 +31,8 @@ repo = dotfiles
 live    = dotfiles/claude/CLAUDE.md      -> ~/.claude/CLAUDE.md
 live    = dotfiles/claude/settings.json  -> ~/.claude/settings.json
 livedir = dotfiles/claude/agents         -> ~/.claude/agents
+
+pr = claude-skills            # push this repo through a PR, so claude.ai syncs
 ```
 
 Keep the conf in your dotfiles repo and map it too, so new machines get it:
@@ -74,7 +76,7 @@ bash ~/.claude/plugins/cache/claude-config-sync/config-sync/*/scripts/config-syn
 
 If one of your repos is a plugin marketplace that claude.ai or Claude Code installs from, there is no live file to copy; the apps pull from GitHub. Two things to know:
 
-- **claude.ai does not sync on push.** It syncs when you ask (Settings > Plugins > Add > Manage marketplaces > your marketplace's menu > Check for updates) or, on some plans, when a pull request is merged. The skill reminds you after a skills push.
+- **claude.ai does not sync on a plain push.** It syncs within a minute or two when a pull request is merged into the default branch (verified on a personal account, 2026-10-09), or when you ask: Settings > Plugins > Add > Manage marketplaces > your marketplace's menu > Check for updates. So for a skills repo, push a branch and merge a PR instead of pushing to `main`; the skill does that when the repo is listed as `pr = <repo>` in the conf.
 - **Claude Code refreshes installed plugins when it starts**, so a new session picks up what claude.ai has synced. The desktop app may need a restart rather than just a new session.
 
 ### If you only use claude.ai or Cowork
@@ -93,7 +95,7 @@ Add the marketplace under Settings > Plugins > Add > Add marketplace, `au5m/clau
 ## Development
 
 ```bash
-bash tests/smoke.sh        # builds throwaway repos in a temp dir, 12 checks
+bash tests/smoke.sh        # builds throwaway repos in a temp dir, 13 checks
 claude plugin validate .   # manifest and skill validation
 ```
 

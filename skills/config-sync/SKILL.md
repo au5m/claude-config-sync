@@ -15,6 +15,7 @@ Everything machine-specific lives in `~/.claude/config-sync.conf` (format in the
 | `repo = <path>` | a repo to keep committed and pushed |
 | `live = <repo file> -> <live file>` | the repo is the source for that live file |
 | `livedir = <repo dir> -> <live dir>` | same for a whole directory |
+| `pr = <repo>` | commit this repo on a branch and open a PR instead of pushing to its default branch (claude.ai marketplaces sync on merge, not on push) |
 
 The check script is `${CLAUDE_PLUGIN_ROOT}/scripts/config-sync-check.sh`. Run it, don't reimplement it.
 
@@ -51,13 +52,15 @@ If both sides changed since the last commit (repo copy differs from `HEAD` *and*
 
 Per repo with changes: stage, gitleaks, show diff and message, commit, `git push origin <branch>`, then confirm `git status -sb` shows nothing ahead or behind.
 
+For a repo listed as `pr = <repo>`: create a branch (`config-sync/<yyyymmdd-hhmm>`), commit there, push it, run `gh pr create --fill --base <default> --head <branch>`, then check out the default branch again. Do **not** merge the PR yourself; give the user the PR URL. After they merge, `git pull --ff-only` on the next run clears the "behind" state. If `gh` is missing, say so and push the branch; the user opens the PR from the link git prints.
+
 New skill in a marketplace repo: also add its folder to the plugin's `skills` list in `.claude-plugin/marketplace.json`.
 
 ### 4. Forward pass (repo → live)
 
 For every mapping where the repo copy is newer: copy it to the live path (or `chezmoi apply` if the user uses chezmoi), then diff until identical.
 
-Skills repos have no live copy to write. claude.ai and Claude Code pull them from GitHub, but **not on push**: claude.ai syncs when it is asked to (Settings > Plugins > Add > Manage marketplaces > the marketplace's menu > Check for updates), or, on some plans, when a pull request is merged. Claude Code refreshes installed plugins when it starts. Tell the user the push landed and that claude.ai may need that click.
+Skills repos have no live copy to write. claude.ai and Claude Code pull them from GitHub, but **not on a plain push**. claude.ai syncs within a minute or two after a pull request is merged into the default branch, or when asked (Settings > Plugins > Add > Manage marketplaces > the marketplace's menu > Check for updates). Claude Code refreshes installed plugins when it starts. For a `pr` repo, tell the user the PR is open and that merging it is what updates claude.ai; for a pushed repo, tell them claude.ai needs that click.
 
 ### 5. Report
 
