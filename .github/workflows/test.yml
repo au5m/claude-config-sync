@@ -1,0 +1,19 @@
+name: test
+on: [push, pull_request]
+jobs:
+  smoke:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: smoke test
+        shell: bash
+        run: bash tests/smoke.sh
+      - name: json manifests parse
+        shell: bash
+        run: |
+          for f in .claude-plugin/marketplace.json .claude-plugin/plugin.json hooks/hooks.json; do
+            python3 -c "import json,sys; json.load(open('$f'))" && echo "ok $f"
+          done

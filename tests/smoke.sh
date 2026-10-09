@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Smoke test for scripts/config-sync-check.sh against throwaway repos.
-# Run: bash tests/smoke.sh   (needs git; writes only under a temp dir; 13 checks)
+# Run: bash tests/smoke.sh   (needs git; writes only under a temp dir; 15 checks)
 set -eu
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
 S="$HERE/scripts/config-sync-check.sh"
@@ -49,6 +49,12 @@ case "$rep" in *"CLAUDE.md: differs (live newer)"*) echo "ok   report flags live
 # 3. livedir: missing file in live
 rm "$HOME/.claude/agents/one.md"
 case "$(bash "$S" --report)" in *"agents/one.md: missing in live"*) echo "ok   livedir missing-in-live";; *) echo "FAIL livedir"; fail=1;; esac
+
+# 3b. repo with no upstream: named, not "?"
+git init -q -b main "$T/base/lone"; $G -C "$T/base/lone" commit -q --allow-empty -m init
+printf 'base = %s\nrepo = lone\n' "$T/base" > "$T/c3"
+case "$(CONFIG_SYNC_CONF=$T/c3 bash "$S" 2>&1 >/dev/null; true)" in *"lone: no upstream branch"*) echo "ok   no-upstream named in hook";; *) echo "FAIL no-upstream hook"; fail=1;; esac
+case "$(CONFIG_SYNC_CONF=$T/c3 bash "$S" --report)" in *"no upstream branch"*"push -u origin"*) echo "ok   no-upstream explained in report";; *) echo "FAIL no-upstream report"; fail=1;; esac
 
 # 4. no config / no base: hooks silent
 check "$(CONFIG_SYNC_CONF=/nope bash "$S"; echo "x$?")" "x0" "hook silent with no config"

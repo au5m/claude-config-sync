@@ -8,18 +8,31 @@ You keep `CLAUDE.md`, `settings.json`, agents and skills in one or more repos. C
 - **A `config-sync` skill** that does the fix: pulls live edits into the repo, commits, pushes, copies repo changes back out to the live files, and re-checks. It shows the diff and the commit message and waits for one approval. It runs gitleaks on every commit.
 - **An end-of-session warning** in the terminal, for the days you ignore the first one.
 
-Works on Windows (Git Bash), macOS and Linux. Needs git. gitleaks is strongly recommended.
+## Requirements
+
+- Claude Code (terminal, or the desktop app's Code tab), on Windows with Git Bash, macOS or Linux
+- `git`, with a stored credential or SSH key for your repos
+- [`gitleaks`](https://github.com/gitleaks/gitleaks), strongly recommended: every commit is scanned before it happens
+- [`gh`](https://cli.github.com/) only if you use the `pr` line (skills repos published through a pull request)
 
 ## Install
 
-In a Claude Code session:
+From a terminal (or inside a terminal Claude Code session, with the leading `claude` dropped):
 
 ```
-/plugin marketplace add au5m/claude-config-sync
-/plugin install config-sync@claude-config-sync
+claude plugin marketplace add au5m/claude-config-sync
+claude plugin install config-sync@claude-config-sync
 ```
 
-Then create `~/.claude/config-sync.conf`. Start from [`examples/config-sync.conf`](examples/config-sync.conf):
+In the desktop app: `+` next to the prompt box > **Plugins** > **Add marketplace**, enter `au5m/claude-config-sync`, then install **Config sync** from it. The terminal, the desktop app and the VS Code extension share the same settings, so installing in one covers the others.
+
+Then run the skill once:
+
+```
+/config-sync:config-sync
+```
+
+With no config yet, it finds your repos, drafts `~/.claude/config-sync.conf`, shows it, and writes it when you say yes. You can also write it yourself from [`examples/config-sync.conf`](examples/config-sync.conf):
 
 ```ini
 base = /c/dev/personal        # first existing base wins, so one conf
@@ -41,7 +54,11 @@ Keep the conf in your dotfiles repo and map it too, so new machines get it:
 live = dotfiles/claude/config-sync.conf -> ~/.claude/config-sync.conf
 ```
 
-Start a new session. If the check finds anything, Claude tells you. If it finds nothing, you see nothing; that is the point.
+Start a new session. If the check finds anything, Claude opens with something like:
+
+> The session-start check found 1 uncommitted change in dotfiles and 1 live file in `~/.claude` that differs from the repo. Want me to run `/config-sync:config-sync`?
+
+If it finds nothing, you see nothing; that is the point.
 
 ## How it behaves
 
@@ -77,7 +94,7 @@ bash ~/.claude/plugins/cache/claude-config-sync/config-sync/*/scripts/config-syn
 If one of your repos is a plugin marketplace that claude.ai or Claude Code installs from, there is no live file to copy; the apps pull from GitHub. Two things to know:
 
 - **claude.ai does not sync on a plain push.** It syncs within a minute or two when a pull request is merged into the default branch (verified on a personal account, 2026-10-09), or when you ask: Settings > Plugins > Add > Manage marketplaces > your marketplace's menu > Check for updates. So for a skills repo, push a branch and merge a PR instead of pushing to `main`; the skill does that for any repo listed on a `pr = <repo>` line in the conf.
-- **Claude Code refreshes installed plugins when it starts**, so a new session picks up what claude.ai has synced. The desktop app may need a restart rather than just a new session.
+- **Claude Code updates installed plugins on its own schedule**, not on every session start. To pull a skills repo change into Claude Code right away: `claude plugin marketplace update <marketplace>` then `claude plugin update <plugin>@<marketplace>`.
 
 ### If you only use claude.ai or Cowork
 
@@ -90,17 +107,22 @@ Add the marketplace under Settings > Plugins > Add > Add marketplace, `au5m/clau
 - **`$'\r': command not found`** when the hook runs. The script got CRLF line endings, usually from `core.autocrlf=true` on Windows. This repo's `.gitattributes` forces LF for `*.sh`; if you copied the script somewhere else, run `dos2unix` on it or re-clone.
 - **"behind origin" never shows up.** The hooks don't fetch (no network at session start). Only `--report`, which the skill runs, does.
 - **gitleaks exit code looks wrong.** Don't pipe its output (`| tail`, `| head`); the exit code you get is the pipe's. The skill is told this; if you run it by hand, run it bare.
-- **I pushed a new version of this plugin and nothing changed.** Claude Code pins an installed plugin to the commit it was installed from and does not pull new ones on its own; the desktop app's Update button stays grey too. Fix: open the plugin screen, uninstall config-sync from the ⋮ menu, and install it again from the `claude-config-sync` marketplace, then start a new session. If the marketplace itself is stale, refresh its clone first: `git -C ~/.claude/plugins/marketplaces/claude-config-sync pull --ff-only` (or `/plugin marketplace update claude-config-sync` in the terminal). Your conf and repos are untouched by a reinstall.
+- **A new version of this plugin was pushed and nothing changed.** Claude Code keeps the installed commit until it is told to look again. From a terminal: `claude plugin marketplace update claude-config-sync` then `claude plugin update config-sync@claude-config-sync`, and start a new session. In the desktop app the Update button may stay grey; uninstall Config sync from its ⋮ menu and install it again from the marketplace. Your conf and repos are untouched either way. (This plugin has no `version` field on purpose: with one, Claude Code would stay on the pinned version until the string changes; without one, every commit is a release.)
+- **Windows: the hook fails with a path error or `bash: ... No such file`.** `bash` on PATH resolved to WSL (`C:\Windows\System32\bash.exe`) instead of Git Bash, and WSL cannot read the Windows path in `${CLAUDE_PLUGIN_ROOT}`. Put `C:\Program Files\Git\bin` ahead of `System32` in PATH, or install Git for Windows if it is missing.
 - **Commit message starts with a stray character on Windows.** `Set-Content -Encoding UTF8` in PowerShell 5.1 writes a BOM. Use `[IO.File]::WriteAllText` with `UTF8Encoding $false`, or `git commit -m`.
+
+## Uninstall
+
+`claude plugin uninstall config-sync@claude-config-sync` (desktop app: ⋮ on Config sync > Uninstall). Delete `~/.claude/config-sync.conf` if you don't want it. Nothing else was written outside your own repos.
 
 ## Development
 
 ```bash
-bash tests/smoke.sh        # builds throwaway repos in a temp dir, 13 checks
+bash tests/smoke.sh        # builds throwaway repos in a temp dir, 15 checks
 claude plugin validate .   # manifest and skill validation
 ```
 
-Changes are tracked in [CHANGELOG.md](CHANGELOG.md). The plugin has no `version` field on purpose: installs track commits, so a push is a release.
+CI runs the smoke test on Ubuntu and Windows (Git Bash) on every push. Changes are tracked in [CHANGELOG.md](CHANGELOG.md). The plugin has no `version` field on purpose: Claude Code then derives the version from the commit, so a push is a release.
 
 ## License
 

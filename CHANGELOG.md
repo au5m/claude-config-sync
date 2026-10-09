@@ -2,6 +2,12 @@
 
 Newest first. The plugin has no version field; each entry names the commit range it covers once it is pushed.
 
+## 2026-10-09 (evening) — ready for other people
+- Skill gains a first-run setup: with no conf it finds your repos, drafts `~/.claude/config-sync.conf`, and writes it on approval.
+- Check script names a repo with no upstream branch instead of printing `?`.
+- README: requirements, desktop-app install path, example start message, uninstall; plugin-update troubleshooting corrected to the documented `claude plugin marketplace update` + `claude plugin update` flow; Windows WSL-bash gotcha.
+- GitHub Actions: smoke test on Ubuntu and Windows.
+
 ## 2026-10-09 (later) — PR-based publish for skills repos
 - Verified: claude.ai syncs a marketplace within minutes of a PR merge into the default branch; a plain push does nothing. Docs updated accordingly.
 - New conf line `pr = <repo>`: the skill commits that repo on a branch and opens a PR instead of pushing to its default branch. `--report` marks such repos `[publish via PR]`.

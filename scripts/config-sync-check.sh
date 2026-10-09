@@ -94,6 +94,12 @@ for rr in "${REPOS[@]}"; do
   dirty=$(git -C "$r" status --porcelain 2>/dev/null | wc -l | tr -d ' ')
   ahead=$(git -C "$r" rev-list --count @{u}..HEAD 2>/dev/null || echo "?")
   behind=$(git -C "$r" rev-list --count HEAD..@{u} 2>/dev/null || echo "?")
+  if [ "$ahead" = "?" ]; then
+    problems=1
+    if [ "$mode" = "report" ]; then say "== $name  (no upstream branch; run: git -C \"$r\" push -u origin <branch>)"; else say "$name: no upstream branch"; fi
+    [ "$dirty" != "0" ] && { [ "$mode" = "report" ] && say "   uncommitted: $dirty"; }
+    continue
+  fi
   if [ "$dirty" != "0" ] || [ "$ahead" != "0" ] || [ "$behind" != "0" ]; then problems=1; fi
   if [ "$mode" = "report" ]; then
     viapr=""; for q in "${PR[@]-}"; do [ -n "$q" ] && [ "$(basename "$(resolve "$q")")" = "$name" ] && viapr="  [publish via PR]"; done

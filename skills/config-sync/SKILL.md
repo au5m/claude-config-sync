@@ -30,6 +30,16 @@ The check script is `${CLAUDE_PLUGIN_ROOT}/scripts/config-sync-check.sh`. Run it
 - **Commit messages:** imperative first line under 60 characters with a scope (`skills: ...`, `dotfiles: ...`, `agents: ...`), blank line, then why. On Windows write the message file as UTF-8 without BOM (`[IO.File]::WriteAllText($path, $msg, (New-Object System.Text.UTF8Encoding $false))`); `Set-Content -Encoding UTF8` in Windows PowerShell 5.1 puts a BOM in the first line of the commit.
 - **Show the diff and the planned commit message, then wait for one approval.** After that, do every step without asking again, unless step 2 finds a conflict.
 
+## First run: no config yet
+
+If the report says `no config at ...`, set the user up before anything else. Do not guess; show, then write once approved.
+
+1. Ask where their config repos live if it isn't obvious, then look there (and in `~/dev`, `~/src`, `~/code`, `~/dotfiles`, `/c/dev` on Windows) for git repos that contain `CLAUDE.md`, `settings.json`, `skills/`, `agents/` or `.claude-plugin/`.
+2. For each candidate, say what it is and whether it has a live counterpart under `~/.claude/` (`CLAUDE.md`, `settings.json`, `agents/`, and anything else the user keeps there). Skills repos that claude.ai installs from get a `pr` line, not a `live` line.
+3. Draft `~/.claude/config-sync.conf` from `${CLAUDE_PLUGIN_ROOT}/examples/config-sync.conf`, show it in full, and write it only after the user says yes.
+4. Suggest they keep the conf in their dotfiles repo and map it (`live = dotfiles/claude/config-sync.conf -> ~/.claude/config-sync.conf`) so other machines get it.
+5. Run the report again and continue below. If `gitleaks` is missing, say so once and point at https://github.com/gitleaks/gitleaks; the skill still works, with a manual diff review instead.
+
 ## Procedure
 
 ### 1. Detect
