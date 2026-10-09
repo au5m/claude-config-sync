@@ -1,0 +1,12 @@
+{
+  "name": "config-sync",
+  "description": "Two-way sync between your dotfiles/skills repos and the live ~/.claude copies, plus SessionStart and SessionEnd drift checks",
+  "author": {
+    "name": "Ahmed Usmani",
+    "url": "https://github.com/au5m"
+  },
+  "homepage": "https://github.com/au5m/claude-config-sync",
+  "repository": "https://github.com/au5m/claude-config-sync",
+  "license": "MIT",
+  "keywords": ["dotfiles", "sync", "git", "hooks", "skills"]
+}

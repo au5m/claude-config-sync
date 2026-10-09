@@ -1,0 +1,15 @@
+{
+  "name": "claude-config-sync",
+  "description": "Keep your Claude Code configuration repos and live copies in sync, with a start-of-session check so you never forget",
+  "owner": {
+    "name": "Ahmed Usmani",
+    "url": "https://github.com/au5m"
+  },
+  "plugins": [
+    {
+      "name": "config-sync",
+      "source": "./",
+      "description": "Two-way sync between your dotfiles/skills repos and the live ~/.claude copies, plus SessionStart and SessionEnd drift checks"
+    }
+  ]
+}
