@@ -1,5 +1,7 @@
 # claude-config-sync
 
+[![test](https://github.com/au5m/claude-config-sync/actions/workflows/test.yml/badge.svg)](https://github.com/au5m/claude-config-sync/actions/workflows/test.yml)
+
 A Claude Code plugin that keeps your Claude configuration in git and tells you when it isn't.
 
 You keep `CLAUDE.md`, `settings.json`, agents and skills in one or more repos. Claude Code reads live copies under `~/.claude/`. Over time the two drift: you edit a live file directly, Claude edits a skill and nobody commits it, a push from another machine never gets pulled. This plugin adds:
@@ -8,31 +10,41 @@ You keep `CLAUDE.md`, `settings.json`, agents and skills in one or more repos. C
 - **A `config-sync` skill** that does the fix: pulls live edits into the repo, commits, pushes, copies repo changes back out to the live files, and re-checks. It shows the diff and the commit message and waits for one approval. It runs gitleaks on every commit.
 - **An end-of-session warning** in the terminal, for the days you ignore the first one.
 
+## Quick start
+
+1. Install the plugin (below).
+2. In a Claude Code session, run `/config-sync:config-sync`. With no config yet it finds your repos, drafts `~/.claude/config-sync.conf`, shows it, and writes it when you say yes.
+3. Start a new session. If anything is out of sync, Claude tells you first thing.
+
 ## Requirements
 
-- Claude Code (terminal, or the desktop app's Code tab), on Windows with Git Bash, macOS or Linux
-- `git`, with a stored credential or SSH key for your repos
-- [`gitleaks`](https://github.com/gitleaks/gitleaks), strongly recommended: every commit is scanned before it happens
-- [`gh`](https://cli.github.com/) only if you use the `pr` line (skills repos published through a pull request)
+- Claude Code: the terminal, or the desktop app's Code tab. Windows needs Git Bash (comes with Git for Windows).
+- `git`, with a stored credential or SSH key for your repos.
+- [`gitleaks`](https://github.com/gitleaks/gitleaks), strongly recommended: every commit is scanned before it happens.
+- [`gh`](https://cli.github.com/), only if you use the `pr` line (skills repos published through a pull request).
 
 ## Install
 
-From a terminal (or inside a terminal Claude Code session, with the leading `claude` dropped):
+**Terminal**
 
 ```
 claude plugin marketplace add au5m/claude-config-sync
 claude plugin install config-sync@claude-config-sync
 ```
 
-In the desktop app: `+` next to the prompt box > **Plugins** > **Add marketplace**, enter `au5m/claude-config-sync`, then install **Config sync** from it. The terminal, the desktop app and the VS Code extension share the same settings, so installing in one covers the others.
+(Inside a running session the same commands are `/plugin marketplace add ...` and `/plugin install ...`.)
 
-Then run the skill once:
+**Desktop app**
 
-```
-/config-sync:config-sync
-```
+1. In the Code tab, type `/plugin`. The plugin screen opens.
+2. **Add marketplace**, enter `au5m/claude-config-sync`.
+3. Open the new `claude-config-sync` marketplace and install **Config sync**. The plugin page should show 1 skill and 2 hooks.
 
-With no config yet, it finds your repos, drafts `~/.claude/config-sync.conf`, shows it, and writes it when you say yes. You can also write it yourself from [`examples/config-sync.conf`](examples/config-sync.conf):
+The terminal, the desktop app and the VS Code extension share the same settings, so installing in one covers the others.
+
+## Configure
+
+`~/.claude/config-sync.conf` says which repos to watch and which live files they own. Let the skill draft it (Quick start, step 2) or write it from [`examples/config-sync.conf`](examples/config-sync.conf):
 
 ```ini
 base = /c/dev/personal        # first existing base wins, so one conf
@@ -45,7 +57,7 @@ live    = dotfiles/claude/CLAUDE.md      -> ~/.claude/CLAUDE.md
 live    = dotfiles/claude/settings.json  -> ~/.claude/settings.json
 livedir = dotfiles/claude/agents         -> ~/.claude/agents
 
-pr = claude-skills            # push this repo through a PR, so claude.ai syncs
+pr = claude-skills            # publish this repo through a PR, so claude.ai syncs
 ```
 
 Keep the conf in your dotfiles repo and map it too, so new machines get it:
@@ -96,9 +108,9 @@ If one of your repos is a plugin marketplace that claude.ai or Claude Code insta
 - **claude.ai does not sync on a plain push.** It syncs within a minute or two when a pull request is merged into the default branch (verified on a personal account, 2026-10-09), or when you ask: Settings > Plugins > Add > Manage marketplaces > your marketplace's menu > Check for updates. So for a skills repo, push a branch and merge a PR instead of pushing to `main`; the skill does that for any repo listed on a `pr = <repo>` line in the conf.
 - **Claude Code updates installed plugins on its own schedule**, not on every session start. To pull a skills repo change into Claude Code right away: `claude plugin marketplace update <marketplace>` then `claude plugin update <plugin>@<marketplace>`.
 
-### If you only use claude.ai or Cowork
+### If you only use claude.ai
 
-Add the marketplace under Settings > Plugins > Add > Add marketplace, `au5m/claude-config-sync`. The skill works in Cowork when your computer is linked (it can run git there). The hooks only run in Claude Code and the desktop app's Code tab, so the start-of-session check needs one of those.
+Add the marketplace under Settings > Plugins > Add > Add marketplace, `au5m/claude-config-sync`. The skill works in claude.ai when your computer is linked through the desktop app (it can run git there). The hooks only run in Claude Code and the desktop app's Code tab, so the start-of-session check needs one of those.
 
 ## Troubleshooting
 
@@ -109,6 +121,8 @@ Add the marketplace under Settings > Plugins > Add > Add marketplace, `au5m/clau
 - **gitleaks exit code looks wrong.** Don't pipe its output (`| tail`, `| head`); the exit code you get is the pipe's. The skill is told this; if you run it by hand, run it bare.
 - **A new version of this plugin was pushed and nothing changed.** Claude Code keeps the installed commit until it is told to look again. From a terminal: `claude plugin marketplace update claude-config-sync` then `claude plugin update config-sync@claude-config-sync`, and start a new session. In the desktop app the Update button may stay grey; uninstall Config sync from its ⋮ menu and install it again from the marketplace. Your conf and repos are untouched either way. (This plugin has no `version` field on purpose: with one, Claude Code would stay on the pinned version until the string changes; without one, every commit is a release.)
 - **Windows: the hook fails with a path error or `bash: ... No such file`.** `bash` on PATH resolved to WSL (`C:\Windows\System32\bash.exe`) instead of Git Bash, and WSL cannot read the Windows path in `${CLAUDE_PLUGIN_ROOT}`. Put `C:\Program Files\Git\bin` ahead of `System32` in PATH, or install Git for Windows if it is missing.
+- **Push rejected: `refusing to allow an OAuth App to create or update workflow ... without workflow scope`.** Your stored GitHub token can't touch `.github/workflows/`. One-time fix: `gh auth refresh -s workflow`, then push again.
+- **`gh: command not found` inside the skill, but it works in PowerShell.** Git Bash doesn't see the PowerShell PATH. Add `C:\Program Files\GitHub CLI` to the system PATH, or let the skill push the branch and open the PR from the link git prints.
 - **Commit message starts with a stray character on Windows.** `Set-Content -Encoding UTF8` in PowerShell 5.1 writes a BOM. Use `[IO.File]::WriteAllText` with `UTF8Encoding $false`, or `git commit -m`.
 
 ## Uninstall
