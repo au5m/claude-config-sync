@@ -82,7 +82,7 @@ The skill always runs in this order and stops at the first problem:
 4. **Forward pass (repo → live).** A repo file newer than its live copy is copied out and diffed until identical.
 5. **Report**, then re-run the check. It is only done when the check says `config-sync: clean`.
 
-What it never does: force-push, rewrite history, delete branches or tracked files, merge or rebase for you, push anywhere but the tracked branch, or commit without showing you the diff.
+What it never does: force-push, rewrite history, delete tracked files, rebase for you, or commit without showing you the diff. It merges and deletes a branch only for a `pr` repo: the PR branch it opened, after your one approval of the diff and message. It pushes only to the tracked branch or that PR branch.
 
 ### The hooks
 
@@ -105,7 +105,7 @@ bash ~/.claude/plugins/cache/claude-config-sync/config-sync/*/scripts/config-syn
 
 If one of your repos is a plugin marketplace that claude.ai or Claude Code installs from, there is no live file to copy; the apps pull from GitHub. Two things to know:
 
-- **claude.ai does not sync on a plain push.** It syncs within a minute or two when a pull request is merged into the default branch (verified on a personal account, 2026-10-09), or when you ask: Settings > Plugins > Add > Manage marketplaces > your marketplace's menu > Check for updates. So for a skills repo, push a branch and merge a PR instead of pushing to `main`; the skill does that for any repo listed on a `pr = <repo>` line in the conf.
+- **claude.ai does not sync on a plain push.** It syncs within a minute or two when a pull request is merged into the default branch (verified on a personal account, 2026-10-09), or when you ask: Settings > Plugins > Add > Manage marketplaces > your marketplace's menu > Check for updates. So for a skills repo, push a branch and merge a PR instead of pushing to `main`. For any repo listed on a `pr = <repo>` line in the conf, the skill does both: after your one approval it opens the PR, merges it (`gh pr merge --squash --delete-branch`) and reports the merged commit. Without `gh` it pushes the branch and you open and merge the PR.
 - **Claude Code updates installed plugins on its own schedule**, not on every session start. To pull a skills repo change into Claude Code right away: `claude plugin marketplace update <marketplace>` then `claude plugin update <plugin>@<marketplace>`.
 
 ### If you only use claude.ai

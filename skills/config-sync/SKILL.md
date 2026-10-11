@@ -23,7 +23,7 @@ The check script is `${CLAUDE_PLUGIN_ROOT}/scripts/config-sync-check.sh`. Run it
 
 - **Say which machine** every command runs on when the user has more than one.
 - **Check before acting.** Run the report first. Never write before showing what the report found.
-- **Never** force-push, rewrite history, delete a branch or a tracked file, or merge/rebase on the user's behalf. Push only to the branch the repo already tracks.
+- **Never** force-push, rewrite history, delete a tracked file, or rebase on the user's behalf. Never merge or delete a branch, with one exception: for a `pr` repo, after the one approval, merge the PR the skill opened and delete its branch. Push only to the branch the repo already tracks, or to the skill's own PR branch for a `pr` repo.
 - **No secrets in the repos.** Before every commit: `git add` the files, then run gitleaks on the staged changes and abort on exit code 1:
   `gitleaks git --pre-commit --staged --redact --verbose` (gitleaks 8.19+; older: `gitleaks protect --staged --redact --verbose`).
   Run it without a pipe (`| tail` hides the exit code) and report the real exit code. If gitleaks is not installed, say so plainly, read the full diff for tokens, keys and account numbers, and only then commit. Never report a scan that did not run.
@@ -62,7 +62,7 @@ If both sides changed since the last commit (repo copy differs from `HEAD` *and*
 
 Per repo with changes: stage, gitleaks, show diff and message, commit, `git push origin <branch>`, then confirm `git status -sb` shows nothing ahead or behind.
 
-For a repo listed as `pr = <repo>`: create a branch (`config-sync/<yyyymmdd-hhmm>`), commit there, push it, run `gh pr create --fill --base <default> --head <branch>`, then check out the default branch again. Do **not** merge the PR yourself; give the user the PR URL. After they merge, `git pull --ff-only` on the next run clears the "behind" state. If `gh` is missing, say so and push the branch; the user opens the PR from the link git prints.
+For a repo listed as `pr = <repo>`: create a branch (`config-sync/<yyyymmdd-hhmm>`), commit there, push it, run `gh pr create --fill --base <default> --head <branch>`, and stay on the branch. The approval point is the diff and the commit message, already shown. After that one approval: `gh pr merge --squash --delete-branch`, then `git checkout <default> && git pull --ff-only`. Report the merged commit. claude.ai syncs within a few minutes; the user confirms in Customize > Plugins > Add > Manage marketplaces. If `gh` is missing, say so and push the branch; the user opens the PR from the link git prints.
 
 New skill in a marketplace repo: also add its folder to the plugin's `skills` list in `.claude-plugin/marketplace.json`.
 
@@ -70,7 +70,7 @@ New skill in a marketplace repo: also add its folder to the plugin's `skills` li
 
 For every mapping where the repo copy is newer: copy it to the live path (or `chezmoi apply` if the user uses chezmoi), then diff until identical.
 
-Skills repos have no live copy to write. claude.ai and Claude Code pull them from GitHub, but **not on a plain push**. claude.ai syncs within a minute or two after a pull request is merged into the default branch, or when asked (Settings > Plugins > Add > Manage marketplaces > the marketplace's menu > Check for updates). Claude Code refreshes installed plugins when it starts. For a `pr` repo, tell the user the PR is open and that merging it is what updates claude.ai; for a pushed repo, tell them claude.ai needs that click.
+Skills repos have no live copy to write. claude.ai and Claude Code pull them from GitHub, but **not on a plain push**. claude.ai syncs within a minute or two after a pull request is merged into the default branch, or when asked (Settings > Plugins > Add > Manage marketplaces > the marketplace's menu > Check for updates). Claude Code refreshes installed plugins when it starts. For a `pr` repo, the skill merges the PR after the one approval, and that merge is what updates claude.ai; report the merged commit. If `gh` was missing, tell the user the branch is pushed and that merging the PR is what updates claude.ai. For a pushed repo, tell them claude.ai needs that click.
 
 ### 5. Report
 

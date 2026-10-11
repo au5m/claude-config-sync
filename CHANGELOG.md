@@ -2,6 +2,10 @@
 
 Newest first. The plugin has no version field; each entry names the commit range it covers once it is pushed.
 
+## 2026-10-11 — skill merges its own PR; .env.example
+- For a `pr = <repo>` repo the skill now merges the PR it opened after the one approval (`gh pr merge --squash --delete-branch`, then `git checkout <default> && git pull --ff-only`) and reports the merged commit. The approval point is still the diff and the commit message. Without `gh` it pushes the branch and the user opens and merges the PR. SKILL.md safety rules and README updated to match.
+- `.env.example` added (config-sync reads no environment variables).
+
 ## 2026-10-09 (evening) — ready for other people
 - Skill gains a first-run setup: with no conf it finds your repos, drafts `~/.claude/config-sync.conf`, and writes it on approval.
 - Check script names a repo with no upstream branch instead of printing `?`.
