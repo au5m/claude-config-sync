@@ -135,11 +135,19 @@ for m in "${LIVEDIR[@]}"; do
   done < <(find "$rd" -type f | sort)
 done
 [ $drift -gt 0 ] && problems=1
+DRIFT_SHOW=5   # --start names this many drifted files, then "and N more"
+startdrift=""
 if [ "$mode" = "report" ]; then
   say "== live vs repo: $drift file(s) differ"
   [ -n "$driftlines" ] && say "${driftlines%$'\n'}"
 elif [ $drift -gt 0 ]; then
   say "live config drifted from repo: $drift file(s)"
+  if [ "$mode" = "start" ]; then
+    startdrift="$(printf '%s' "$driftlines" | head -n "$DRIFT_SHOW")"
+    if [ $drift -gt $DRIFT_SHOW ]; then
+      startdrift+=$'\n'"   and $((drift-DRIFT_SHOW)) more (offer the full list; the user says \"show all drift\" to see it)"
+    fi
+  fi
 fi
 
 oneline() { printf '%s' "$out" | paste -sd ';' - | sed 's/;/; /g'; }
@@ -150,7 +158,15 @@ case "$mode" in
     [ $problems -eq 0 ] && echo "config-sync: clean"
     exit 0 ;;
   start)
-    [ $problems -ne 0 ] && echo "config-sync check: $(oneline). Mention this to the user at the start of the session and offer to run $SKILL_CMD."
+    if [ $problems -ne 0 ]; then
+      if [ -n "$startdrift" ]; then
+        echo "config-sync check: $(oneline):"
+        echo "$startdrift"
+        echo "Mention this to the user at the start of the session, name each drifted file on its own line, and offer to run $SKILL_CMD."
+      else
+        echo "config-sync check: $(oneline). Mention this to the user at the start of the session and offer to run $SKILL_CMD."
+      fi
+    fi
     exit 0 ;;
   *)
     if [ $problems -ne 0 ]; then

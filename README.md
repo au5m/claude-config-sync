@@ -68,7 +68,12 @@ live = dotfiles/claude/config-sync.conf -> ~/.claude/config-sync.conf
 
 Start a new session. If the check finds anything, Claude opens with something like:
 
-> The session-start check found 1 uncommitted change in dotfiles and 1 live file in `~/.claude` that differs from the repo. Want me to run `/config-sync:config-sync`?
+> The session-start check found 1 uncommitted change in dotfiles and 1 live file in `~/.claude` that differs from the repo:
+> - `CLAUDE.md`: differs (live newer)
+>
+> Want me to run `/config-sync:config-sync`?
+
+The start check names up to 5 drifted files, then says `and N more`; ask for "show all drift" to see the rest.
 
 If it finds nothing, you see nothing; that is the point.
 
@@ -90,7 +95,7 @@ The plugin ships [`hooks/hooks.json`](hooks/hooks.json), so installing it regist
 
 | Hook | What you see |
 |---|---|
-| `SessionStart` | Claude opens with one sentence about what is out of sync and offers `/config-sync:config-sync`. Works in the terminal and in the desktop app's Code tab. |
+| `SessionStart` | Claude opens with one sentence about what is out of sync, names the drifted files (up to 5, then `and N more`) and offers `/config-sync:config-sync`. Works in the terminal and in the desktop app's Code tab. |
 | `SessionEnd` | One warning line in the terminal. The desktop app shows nothing here, which is why the start hook exists. |
 
 Both are silent when the machine has no `config-sync.conf` or none of its `base` directories exist, so the plugin can sit in a shared settings file without nagging on a machine you haven't set up.
@@ -132,7 +137,7 @@ Add the marketplace under Settings > Plugins > Add > Add marketplace, `au5m/clau
 ## Development
 
 ```bash
-bash tests/smoke.sh        # builds throwaway repos in a temp dir, 15 checks
+bash tests/smoke.sh        # builds throwaway repos in a temp dir, 19 checks
 claude plugin validate .   # manifest and skill validation
 ```
 
