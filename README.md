@@ -47,8 +47,8 @@ The terminal, the desktop app and the VS Code extension share the same settings,
 `~/.claude/config-sync.conf` says which repos to watch and which live files they own. Let the skill draft it (Quick start, step 2) or write it from [`examples/config-sync.conf`](examples/config-sync.conf):
 
 ```ini
-base = /c/dev/personal        # first existing base wins, so one conf
-base = ~/dev/personal         # can serve a Windows box and a Linux box
+base = /c/src/config          # first existing base wins, so one conf
+base = ~/src/config           # can serve a Windows box and a Linux box
 
 repo = claude-skills          # relative to base, or absolute
 repo = dotfiles
