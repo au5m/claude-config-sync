@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Smoke test for scripts/config-sync-check.sh against throwaway repos.
-# Run: bash tests/smoke.sh   (needs git; writes only under a temp dir; 15 checks)
+# Run: bash tests/smoke.sh   (needs git; writes only under a temp dir; 19 checks)
 set -eu
 HERE="$(cd "$(dirname "$0")/.." && pwd)"
 S="$HERE/scripts/config-sync-check.sh"
@@ -42,6 +42,13 @@ out="$(bash "$S" 2>&1 >/dev/null; true)"; code=$(bash "$S" 2>/dev/null; echo $?)
 check "$code" "2" "hook exits 2 on drift"
 case "$out" in *"skills: 1 uncommitted"*"CLAUDE.md"*|*"skills: 1 uncommitted"*"drifted"*) echo "ok   hook names the repo and the drift";; *) echo "FAIL hook line: $out"; fail=1;; esac
 sout="$(bash "$S" --start)"; case "$sout" in "config-sync check: "*"offer to run /config-sync:config-sync.") echo "ok   start line shape";; *) echo "FAIL start line: $sout"; fail=1;; esac
+case "$sout" in *$'\n'"   CLAUDE.md: differs (live newer)"$'\n'*) echo "ok   start names the drifted file";; *) echo "FAIL start file name: $sout"; fail=1;; esac
+case "$sout" in *"and "*" more"*) echo "FAIL start caps a short list: $sout"; fail=1;; *) echo "ok   start shows no cap for 1 file";; esac
+for i in 1 2 3 4 5 6; do echo x > "$T/base/dotfiles/claude/agents/m$i.md"; done
+sout="$(bash "$S" --start)"
+check "$(printf '%s\n' "$sout" | grep -c '^   .*: ')" "5" "start lists at most 5 drifted files"
+case "$sout" in *"   and 2 more ("*"show all drift"*) echo "ok   start says how many more";; *) echo "FAIL start cap line: $sout"; fail=1;; esac
+rm "$T/base/dotfiles/claude/agents"/m*.md
 rep="$(bash "$S" --report)"
 case "$rep" in *"behind origin: 1"*) echo "ok   report detects behind after fetch";; *) echo "FAIL behind not detected"; echo "$rep"; fail=1;; esac
 case "$rep" in *"CLAUDE.md: differs (live newer)"*) echo "ok   report flags live newer";; *) echo "FAIL live-newer"; fail=1;; esac
