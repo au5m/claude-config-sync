@@ -2,6 +2,9 @@
 
 Newest first. The plugin has no version field; each entry names the commit range it covers once it is pushed.
 
+## 2026-10-14 — LF for all text files
+- `.gitattributes`: new baseline `* text=auto eol=lf` (png, jpg, zip as binary) above the existing `*.sh` and `*.conf` rules. Why: Git for Windows defaults to `core.autocrlf=true`, which checked out `hooks.json`, Markdown and workflow files with CRLF. The index was already LF; renormalize changed no file.
+
 ## 2026-10-11 (later) — start check names the drifted files
 - `--start` lists each drifted file (same lines as `--report`: name, differs/missing, which side is newer) under the summary, up to 5, then `and N more`. SKILL.md: Claude names the files one per line and offers the full list; "show all drift" runs `--report`. Smoke test: 19 checks.
 

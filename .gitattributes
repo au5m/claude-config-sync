@@ -1,3 +1,9 @@
+# Text files use LF on every OS, Windows included.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.zip binary
+
 # Shell scripts must keep LF endings or Git Bash / Linux bash cannot run them
 *.sh text eol=lf
 *.conf text eol=lf
